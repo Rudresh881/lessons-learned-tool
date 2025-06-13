@@ -2,63 +2,51 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
 const path = require('path');
-const issuesRouter = require('./routes/issues');
+const connectDB = require('./config/db');
+const issueRoutes = require('./routes/issueRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Enhanced CORS configuration
-const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-  optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
+// Database Connection
+connectDB();
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Static files
+// Middleware
+app.use(helmet());
+app.use(cors({
+  origin: 'https://your-frontend-domain.com' || 'http://localhost:3000',
+  credentials: true
+}));
+app.use(morgan('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// MongoDB connection with timeout
-const MONGODB_URI = process.env.MONGODB_URI;
-const connectWithRetry = () => {
-  mongoose.connect(MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000
-  })
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => {
-    console.error('MongoDB connection failed:', err);
-    setTimeout(connectWithRetry, 5000);
-  });
-};
-connectWithRetry();
-
 // Routes
-app.use('/api/issues', issuesRouter);
+app.use('/api/issues', issueRoutes);
 
-// Enhanced health check
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'healthy',
-    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    uptime: process.uptime()
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    success: false,
+    message: 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 
-// Start server with error handling
-const server = app.listen(PORT, () => {
+// Start Server
+app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`MongoDB Connected: ${mongoose.connection.host}`);
 });
 
-server.on('error', (err) => {
-  console.error('Server error:', err);
-  if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is already in use`);
-  }
-});
+app.use(cors({
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+  exposedHeaders: ['Content-Disposition'] // Important for file downloads
+}));

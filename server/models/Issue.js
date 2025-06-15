@@ -64,6 +64,28 @@ const IssueSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  ntId: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  email: {
+    type: String,
+    required: true,
+    trim: true,
+    match: [/.+\@.+\..+/, 'Please fill a valid email address']
+  },
+  solution: {
+    description: String,
+    files: [FileSchema], // Reusing the same FileSchema
+    solvedAt: Date,
+    solvedBy: String // NT ID of who solved it
+  },
+  status: {
+    type: String,
+    enum: ['Open', 'In Progress', 'Resolved'],
+    default: 'Open'
   }
 });
 

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Upload, AlertCircle, FileText, X, Loader2 } from 'lucide-react';
+import { Upload, FilePlus, X, AlertCircle, ChevronDown } from 'lucide-react';
 
 export default function ReportIssueForm() {
   const [formData, setFormData] = useState({
+    ntId: '',
+    email: '',
     projectName: '',
     ratedPower: '',
     ratedSpeed: '',
@@ -30,7 +32,7 @@ export default function ReportIssueForm() {
     const newFiles = Array.from(e.target.files);
     const validFiles = newFiles.filter(file => 
       ['image/jpeg', 'image/png', 'application/pdf'].includes(file.type) &&
-      file.size <= 10 * 1024 * 1024 // 10MB
+      file.size <= 10 * 1024 * 1024
     );
     setFiles(prev => [...prev, ...validFiles]);
   };
@@ -47,29 +49,22 @@ export default function ReportIssueForm() {
 
     try {
       const formDataToSend = new FormData();
-      
-      // Append form fields
       Object.entries(formData).forEach(([key, value]) => {
         formDataToSend.append(key, value);
       });
-      
-      // Append files
-      files.forEach(file => {
-        formDataToSend.append('files', file);
-      });
+      files.forEach(file => formDataToSend.append('files', file));
 
-      // Updated API call with relative path
       const response = await axios.post('/api/issues', formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        timeout: 10000 // 10 second timeout
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 10000
       });
 
       if (response.status === 201) {
         setSuccess(true);
         // Reset form
         setFormData({
+          ntId: '',
+          email: '',
           projectName: '',
           ratedPower: '',
           ratedSpeed: '',
@@ -85,24 +80,13 @@ export default function ReportIssueForm() {
       }
     } catch (err) {
       let errorMessage = 'Failed to submit issue';
-      
       if (err.code === 'ECONNABORTED') {
         errorMessage = 'Request timed out. Please try again.';
-      } else if (err.response) {
-        // Server responded with error status
-        errorMessage = err.response.data?.message || 
-                      `Server error: ${err.response.status}`;
-      } else if (err.request) {
-        // Request was made but no response
-        errorMessage = 'No response from server. Please check:';
-        errorMessage += '\n1. Backend is running (port 5000)';
-        errorMessage += '\n2. Network connection';
-        errorMessage += '\n3. CORS configuration';
+      } else if (!err.response) {
+        errorMessage = 'Server not responding. Check:\n1. Backend is running\n2. Network connection';
       } else {
-        // Other errors
-        errorMessage = err.message;
+        errorMessage = err.response.data?.message || err.message;
       }
-      
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -113,7 +97,6 @@ export default function ReportIssueForm() {
     <div className="max-w-4xl mx-auto p-4">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Report New Issue</h1>
 
-      {/* Error Message */}
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
           <div className="flex items-center">
@@ -124,7 +107,6 @@ export default function ReportIssueForm() {
         </div>
       )}
 
-      {/* Success Message */}
       {success && (
         <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded">
           Issue submitted successfully!
@@ -132,196 +114,232 @@ export default function ReportIssueForm() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Required Fields */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Project Name / PIDC <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="projectName"
-              value={formData.projectName}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Rated Power (kW) <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              name="ratedPower"
-              value={formData.ratedPower}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Rated Speed (rpm) <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              name="ratedSpeed"
-              value={formData.ratedSpeed}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Application <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="application"
-              value={formData.application}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Legislation <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="legislation"
-              value={formData.legislation}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              FIE System (optional)
-            </label>
-            <input
-              type="text"
-              name="fieSystem"
-              value={formData.fieSystem}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              EGT System (optional)
-            </label>
-            <input
-              type="text"
-              name="egtSystem"
-              value={formData.egtSystem}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Issue Type <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="issueType"
-              value={formData.issueType}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="Hardware">Hardware</option>
-              <option value="Calibration">Calibration</option>
-              <option value="Process">Process</option>
-            </select>
+        {/* User Information Section */}
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h2 className="text-lg font-medium text-blue-800 mb-4">Your Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                NT ID <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="ntId"
+                value={formData.ntId}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Issue Title <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            name="issueTitle"
-            value={formData.issueTitle}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Description <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            required
-            rows={5}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Attachments (optional)
-          </label>
-          <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-            <div className="space-y-1 text-center">
-              <div className="flex text-sm text-gray-600 justify-center">
-                <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
-                  <span>Upload files</span>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileChange}
-                    className="sr-only"
-                    accept=".jpg,.jpeg,.png,.pdf"
-                  />
-                </label>
-                <p className="pl-1">or drag and drop</p>
+        {/* Project Information Section */}
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h2 className="text-lg font-medium text-gray-800 mb-4">Project Details</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Project Name / PIDC <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="projectName"
+                value={formData.projectName}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Rated Power (kW) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="ratedPower"
+                value={formData.ratedPower}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Rated Speed (rpm) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="ratedSpeed"
+                value={formData.ratedSpeed}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Application <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="application"
+                value={formData.application}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Legislation <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="legislation"
+                value={formData.legislation}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                FIE System (optional)
+              </label>
+              <input
+                type="text"
+                name="fieSystem"
+                value={formData.fieSystem}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                EGT System (optional)
+              </label>
+              <input
+                type="text"
+                name="egtSystem"
+                value={formData.egtSystem}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Issue Type <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  name="issueType"
+                  value={formData.issueType}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                >
+                  <option value="Hardware">Hardware</option>
+                  <option value="Calibration">Calibration</option>
+                  <option value="Process">Process</option>
+                </select>
+                <ChevronDown className="h-4 w-4 absolute right-3 top-3 text-gray-400 pointer-events-none" />
               </div>
-              <p className="text-xs text-gray-500">
-                JPG, PNG, PDF up to 10MB each
-              </p>
             </div>
           </div>
+        </div>
 
-          {files.length > 0 && (
-            <div className="mt-4 space-y-2">
-              {files.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-100 rounded">
-                  <div className="flex items-center">
-                    <FileText className="h-4 w-4 mr-2 text-gray-500" />
-                    <span className="text-sm">{file.name}</span>
-                    <span className="text-xs text-gray-500 ml-2">
-                      {(file.size / 1024 / 1024).toFixed(2)}MB
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeFile(index)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
+        {/* Issue Details Section */}
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <h2 className="text-lg font-medium text-gray-800 mb-4">Issue Details</h2>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Issue Title <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="issueTitle"
+                value={formData.issueTitle}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
-          )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                required
+                rows={5}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Attachments (optional)
+              </label>
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                <div className="space-y-1 text-center">
+                  <div className="flex text-sm text-gray-600 justify-center">
+                    <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
+                      <span>Upload files</span>
+                      <input
+                        type="file"
+                        multiple
+                        onChange={handleFileChange}
+                        className="sr-only"
+                        accept=".jpg,.jpeg,.png,.pdf"
+                      />
+                    </label>
+                    <p className="pl-1">or drag and drop</p>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    JPG, PNG, PDF up to 10MB each
+                  </p>
+                </div>
+              </div>
+              
+              {files.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {files.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-100 rounded">
+                      <div className="flex items-center">
+                        <FilePlus className="h-4 w-4 mr-2 text-gray-500" />
+                        <span className="text-sm">{file.name}</span>
+                        <span className="text-xs text-gray-500 ml-2">
+                          {(file.size / 1024 / 1024).toFixed(2)}MB
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="pt-2">
@@ -336,8 +354,11 @@ export default function ReportIssueForm() {
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="animate-spin h-4 w-4 mr-2" />
-                Submitting...
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
               </>
             ) : (
               <>

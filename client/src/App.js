@@ -5,6 +5,8 @@ import Sidebar from './components/Sidebar';
 import SearchIssues from './pages/SearchIssues';
 import ReportIssueForm from './pages/ReportIssueForm';
 import '@fontsource/inter';
+import Implementation from './pages/Implementation'; // Adjust the path if needed
+
 
 // Fallback BoschLogo component in case import fails
 let BoschLogo;
@@ -56,6 +58,7 @@ function App() {
             <Routes>
               <Route path="/" element={<SearchIssues />} />
               <Route path="/report" element={<ReportIssueForm />} />
+              <Route path="/implementation" element={<Implementation />} />
             </Routes>
           </div>
         </main>

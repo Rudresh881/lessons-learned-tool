@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { Home, FilePlus } from 'lucide-react';
+import { ClipboardCheck } from 'lucide-react';
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   return (
@@ -27,7 +28,13 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
             <Home className="h-5 w-5 mr-3" />
             Search Issues
           </NavLink>
-          
+          <NavLink
+  to="/implementation"
+  className={({ isActive }) => `flex items-center px-4 py-3 rounded-md text-gray-700 hover:bg-gray-100 ${isActive ? 'bg-gray-100 font-medium' : ''}`}
+>
+  <ClipboardCheck className="h-5 w-5 mr-3" />
+  Implementation
+</NavLink>
           <NavLink
             to="/report"
             className={({ isActive }) =>

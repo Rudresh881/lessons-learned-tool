@@ -18,6 +18,10 @@ const IssueSchema = new mongoose.Schema({
     required: [true, 'Project name is required'],
     trim: true
   },
+  customerName: {
+    type: String,
+    trim: true
+  },
   ratedPower: {
     type: Number,
     required: [true, 'Rated power is required'],
@@ -43,6 +47,10 @@ const IssueSchema = new mongoose.Schema({
     trim: true
   },
   egtSystem: {
+    type: String,
+    trim: true
+  },
+  fuelType: {
     type: String,
     trim: true
   },
@@ -77,10 +85,15 @@ const IssueSchema = new mongoose.Schema({
     match: [/.+\@.+\..+/, 'Please fill a valid email address']
   },
   solution: {
+    type: {
+      type: String,
+      enum: ['Known solution', 'Cross Domain solution', 'Innovation solution']
+    },
     description: String,
-    files: [FileSchema], // Reusing the same FileSchema
+    files: [FileSchema],
     solvedAt: Date,
-    solvedBy: String // NT ID of who solved it
+    solvedBy: String, // ntId
+    solvedByEmail: String
   },
   status: {
     type: String,

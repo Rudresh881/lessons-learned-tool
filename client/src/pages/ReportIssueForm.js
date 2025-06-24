@@ -15,7 +15,9 @@ export default function ReportIssueForm() {
     egtSystem: '',
     issueTitle: '',
     description: '',
-    issueType: 'Hardware'
+    issueType: 'Hardware',
+    customerName: '',
+    fuelType: ''
   });
 
   const [files, setFiles] = useState([]);
@@ -30,7 +32,7 @@ export default function ReportIssueForm() {
 
   const handleFileChange = (e) => {
     const newFiles = Array.from(e.target.files);
-    const validFiles = newFiles.filter(file => 
+    const validFiles = newFiles.filter(file =>
       ['image/jpeg', 'image/png', 'application/pdf'].includes(file.type) &&
       file.size <= 10 * 1024 * 1024
     );
@@ -61,7 +63,6 @@ export default function ReportIssueForm() {
 
       if (response.status === 201) {
         setSuccess(true);
-        // Reset form
         setFormData({
           ntId: '',
           email: '',
@@ -74,7 +75,9 @@ export default function ReportIssueForm() {
           egtSystem: '',
           issueTitle: '',
           description: '',
-          issueType: 'Hardware'
+          issueType: 'Hardware',
+          customerName: '',
+          fuelType: ''
         });
         setFiles([]);
       }
@@ -114,142 +117,37 @@ export default function ReportIssueForm() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* User Information Section */}
+        {/* User Info */}
         <div className="bg-blue-50 p-4 rounded-lg">
           <h2 className="text-lg font-medium text-blue-800 mb-4">Your Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                NT ID <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="ntId"
-                value={formData.ntId}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+            <InputField label="NT ID" name="ntId" value={formData.ntId} onChange={handleChange} required />
+            <InputField label="Email" type="email" name="email" value={formData.email} onChange={handleChange} required />
           </div>
         </div>
 
-        {/* Project Information Section */}
+        {/* Project Info */}
         <div className="bg-gray-50 p-4 rounded-lg">
           <h2 className="text-lg font-medium text-gray-800 mb-4">Project Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InputField label="Project Name / PIDC" name="projectName" value={formData.projectName} onChange={handleChange} required />
+            <InputField label="Customer Name" name="customerName" value={formData.customerName} onChange={handleChange} required />
+            <InputField label="Rated Power (kW)" name="ratedPower" type="number" value={formData.ratedPower} onChange={handleChange} required />
+            <InputField label="Rated Speed (rpm)" name="ratedSpeed" type="number" value={formData.ratedSpeed} onChange={handleChange} required />
+            <InputField label="Application" name="application" value={formData.application} onChange={handleChange} required />
+            <InputField label="Legislation" name="legislation" value={formData.legislation} onChange={handleChange} required />
+            <InputField label="FIE System (optional)" name="fieSystem" value={formData.fieSystem} onChange={handleChange} />
+            <InputField label="EGT System (optional)" name="egtSystem" value={formData.egtSystem} onChange={handleChange} />
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Project Name / PIDC <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="projectName"
-                value={formData.projectName}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Rated Power (kW) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="ratedPower"
-                value={formData.ratedPower}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Rated Speed (rpm) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="ratedSpeed"
-                value={formData.ratedSpeed}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Application <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="application"
-                value={formData.application}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Legislation <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="legislation"
-                value={formData.legislation}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                FIE System (optional)
-              </label>
-              <input
-                type="text"
-                name="fieSystem"
-                value={formData.fieSystem}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                EGT System (optional)
-              </label>
-              <input
-                type="text"
-                name="egtSystem"
-                value={formData.egtSystem}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Issue Type <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Issue Type <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select
                   name="issueType"
                   value={formData.issueType}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 appearance-none"
                 >
                   <option value="Hardware">Hardware</option>
                   <option value="Calibration">Calibration</option>
@@ -258,66 +156,56 @@ export default function ReportIssueForm() {
                 <ChevronDown className="h-4 w-4 absolute right-3 top-3 text-gray-400 pointer-events-none" />
               </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fuel Type <span className="text-red-500">*</span></label>
+              <select
+                name="fuelType"
+                value={formData.fuelType}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Fuel Type</option>
+                <option value="Diesel">Diesel</option>
+                <option value="Gasoline">Gasoline</option>
+                <option value="Natural Gas">Natural Gas</option>
+                <option value="Biofuel">Biofuel</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="Electric">Electric</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Issue Details Section */}
+        {/* Issue Details */}
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <h2 className="text-lg font-medium text-gray-800 mb-4">Issue Details</h2>
           <div className="space-y-6">
+            <InputField label="Issue Title" name="issueTitle" value={formData.issueTitle} onChange={handleChange} required />
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Issue Title <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="issueTitle"
-                value={formData.issueTitle}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description <span className="text-red-500">*</span></label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 required
                 rows={5}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Attachments (optional)
-              </label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                <div className="space-y-1 text-center">
-                  <div className="flex text-sm text-gray-600 justify-center">
-                    <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
-                      <span>Upload files</span>
-                      <input
-                        type="file"
-                        multiple
-                        onChange={handleFileChange}
-                        className="sr-only"
-                        accept=".jpg,.jpeg,.png,.pdf"
-                      />
-                    </label>
-                    <p className="pl-1">or drag and drop</p>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    JPG, PNG, PDF up to 10MB each
-                  </p>
-                </div>
-              </div>
-              
+              <label className="block text-sm font-medium text-gray-700 mb-1">Attachments (optional)</label>
+              <input
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                accept=".jpg,.jpeg,.png,.pdf"
+                className="block w-full text-sm text-gray-500"
+              />
               {files.length > 0 && (
-                <div className="mt-4 space-y-2">
+                <div className="mt-2 space-y-2">
                   {files.map((file, index) => (
                     <div key={index} className="flex items-center justify-between p-2 bg-gray-100 rounded">
                       <div className="flex items-center">
@@ -327,11 +215,7 @@ export default function ReportIssueForm() {
                           {(file.size / 1024 / 1024).toFixed(2)}MB
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeFile(index)}
-                        className="text-red-500 hover:text-red-700"
-                      >
+                      <button type="button" onClick={() => removeFile(index)} className="text-red-500 hover:text-red-700">
                         <X className="h-4 w-4" />
                       </button>
                     </div>
@@ -346,10 +230,8 @@ export default function ReportIssueForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-              isSubmitting 
-                ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+            className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
             }`}
           >
             {isSubmitting ? (
@@ -369,6 +251,25 @@ export default function ReportIssueForm() {
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+// Reusable input field component
+function InputField({ label, name, value, onChange, type = 'text', required = false }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        required={required}
+        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500"
+      />
     </div>
   );
 }

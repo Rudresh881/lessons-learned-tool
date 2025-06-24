@@ -1,25 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Loader2 } from 'lucide-react';
-import IssueCard from '../components/IssueCard'; // Single import statement
+import IssueCard from '../components/IssueCard';
+import SolutionModal from '../components/SolutionModal'; // Make sure this import is correct
 
 export default function SearchIssues() {
   const [searchQuery, setSearchQuery] = useState('');
   const [issues, setIssues] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    
-    setIsLoading(true);
-    setError('');
-    
+  const [selectedIssue, setSelectedIssue] = useState(null);
+  const [showSolutionModal, setShowSolutionModal] = useState(false);
+
+  const handleUpdate = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const refreshIssues = async () => {
     try {
       const response = await axios.get('/api/issues', {
         params: { search: searchQuery }
       });
-      
+      setIssues(response.data.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load issues');
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setIsLoading(true);
+    setError('');
+    try {
+      const response = await axios.get('/api/issues', {
+        params: { search: searchQuery }
+      });
       setIssues(response.data.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to search issues');
@@ -29,27 +46,14 @@ export default function SearchIssues() {
     }
   };
 
-  // Load initial issues
   useEffect(() => {
-    const fetchInitialIssues = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get('/api/issues');
-        setIssues(response.data.data);
-      } catch (err) {
-        setError('Failed to load issues');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchInitialIssues();
-  }, []);
+    refreshIssues();
+  }, [searchQuery, refreshKey]);
 
   return (
     <div className="max-w-6xl mx-auto p-4">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Search Issues</h1>
-      
+
       <div className="flex mb-6">
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -77,13 +81,27 @@ export default function SearchIssues() {
           Search
         </button>
       </div>
-      
+
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
         </div>
       )}
-      
+
+      {/* Solution Modal */}
+      {showSolutionModal && selectedIssue && (
+        <SolutionModal
+          issue={selectedIssue}
+          onClose={() => setShowSolutionModal(false)}
+          onSubmit={async (solutionData) => {
+            await axios.post(`/api/issues/${selectedIssue._id}/solutions`, solutionData);
+            setShowSolutionModal(false);
+            refreshIssues();
+          }}
+        />
+      )}
+
+      {/* Issue List */}
       <div className="space-y-4">
         {isLoading && !issues.length ? (
           <div className="flex justify-center py-10">
@@ -91,11 +109,21 @@ export default function SearchIssues() {
           </div>
         ) : issues.length > 0 ? (
           issues.map(issue => (
-            <IssueCard key={issue._id} issue={issue} />
+            <IssueCard
+              key={issue._id}
+              issue={issue}
+              onView={() => setSelectedIssue(issue)}
+              onEdit={() => {
+                setSelectedIssue(issue);
+                setShowSolutionModal(true);
+              }}
+            />
           ))
         ) : (
           <div className="text-center py-10 text-gray-500">
-            {searchQuery ? 'No issues found matching your search.' : 'No issues found. Try searching or report a new issue.'}
+            {searchQuery
+              ? 'No issues found matching your search.'
+              : 'No issues found. Try searching or report a new issue.'}
           </div>
         )}
       </div>

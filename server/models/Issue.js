@@ -92,8 +92,10 @@ const IssueSchema = new mongoose.Schema({
     description: String,
     files: [FileSchema],
     solvedAt: Date,
-    solvedBy: String, // ntId
-    solvedByEmail: String
+    solvedBy: {
+      ntId: { type: String },
+      email: { type: String }
+    }
   },
   status: {
     type: String,

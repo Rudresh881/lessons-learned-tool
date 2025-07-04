@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
 import { Eye, Edit, FileText } from 'lucide-react';
-import EditSolutionModal from './SolutionModal';
+import EditSolutionModal from './EditSolutionModal';
 import axios from 'axios';
 
 export default function IssueCard({ issue, onView, onEdit }) {
   const [showEditModal, setShowEditModal] = useState(false);
 
-  const handleSubmitSolution = async (formData) => {
+  const handleSubmitSolution = async ({ ntId, email, solutionType, solution, files }) => {
+    const formData = new FormData();
+    formData.append('ntId', ntId);
+    formData.append('email', email);
+    formData.append('category', solutionType);
+    formData.append('description', solution);
+
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+
     try {
       const response = await axios.patch(`/api/issues/${issue._id}/solution`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
+      setShowEditModal(false); // Close the modal after success
       return response.data;
     } catch (error) {
       console.error('Error submitting solution:', error);

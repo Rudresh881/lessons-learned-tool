@@ -1,90 +1,112 @@
 import React, { useState } from 'react';
-import { Search, Download } from 'lucide-react';
+import axios from 'axios';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import axios from 'axios';
+import { Search, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
-export default function Implementation() {
+export default function ImplementationTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [issues, setIssues] = useState([]);
 
   const handleSearch = async () => {
-    try {
-      const response = await axios.get(`/api/issues?search=${searchQuery}`);
-      setIssues(response.data);
-    } catch (error) {
-      console.error("Error fetching issues:", error);
-    }
+    const response = await axios.get(`/api/issues?search=${searchQuery}`);
+    setIssues(response.data.data); // Assuming your API returns { data: [...] }
+
   };
 
-  const downloadIssue = async (issue) => {
-    try {
-      const zip = new JSZip();
+  
 
-      // Add issue details as text file
-      zip.file(`${issue.issueTitle}.txt`, 
-        `Issue: ${issue.issueTitle}\n` +
-        `Project: ${issue.projectName}\n` +
-        `Description: ${issue.description}\n` +
-        `Solution: ${issue.solution?.description || 'No solution yet'}`
-      );
+const handleDownload = async (issue) => {
+  const zip = new JSZip();
 
-      // Add attachments if they exist
-      if (issue.files?.length > 0) {
-        const attachments = zip.folder('attachments');
-        await Promise.all(issue.files.map(async (file) => {
-          try {
-            const response = await fetch(`/uploads/${file.filename}`);
-            const blob = await response.blob();
-            attachments.file(file.originalname, blob);
-          } catch (err) {
-            console.error(`Failed to fetch file: ${file.filename}`, err);
-          }
-        }));
-      }
-
-      // Generate and download ZIP
-      const content = await zip.generateAsync({ type: 'blob' });
-      saveAs(content, `${issue.issueTitle}_${new Date().toISOString().split('T')[0]}.zip`);
-    } catch (error) {
-      console.error("Error downloading issue:", error);
-    }
+  // Prepare data for Excel
+  const issueDetails = {
+    'Issue Title': issue.issueTitle,
+    Description: issue.description,
+    Application: issue.application,
+    Project: issue.projectName || '',
+    Customer: issue.customerName || '',
+    'Rated Power': issue.ratedPower || '',
+    'Rated Speed': issue.ratedSpeed || '',
+    'Issue Type': issue.issueType || '',
+    'FIE System': issue.fieSystem || '',
+    'EGT System': issue.egtSystem || '',
+    Legislation: issue.legislation || '',
+    'Fuel Type': issue.fuelType || '',
+    'Reported By': issue.ntId || '',
+    'Reported Email': issue.email || ''
   };
+
+  if (issue.solution) {
+    issueDetails['Solution Type'] = issue.solution.category || '';
+    issueDetails['Solution Description'] = issue.solution.solution || '';
+    issueDetails['Solved By'] = issue.solution.solvedBy?.ntId || '';
+    issueDetails['Solved Email'] = issue.solution.solvedBy?.email || '';
+  }
+
+  // Create worksheet and workbook
+  const ws = XLSX.utils.json_to_sheet([issueDetails]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Issue Details');
+
+  // Convert to blob
+  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  zip.file(`${issue.issueTitle.replace(/\s+/g, '_')}.xlsx`, excelBuffer);
+
+  // Add attachments if any
+  if (issue.files?.length > 0) {
+    const filesFolder = zip.folder('attachments');
+    await Promise.all(issue.files.map(async (file) => {
+      const response = await axios.get(`/uploads/${file.filename}`, {
+        responseType: 'blob'
+      });
+      filesFolder.file(file.originalname, response.data);
+    }));
+  }
+
+  const content = await zip.generateAsync({ type: 'blob' });
+  saveAs(content, `${issue.issueTitle.replace(/\s+/g, '_')}.zip`);
+};
+
 
   return (
     <div className="max-w-6xl mx-auto p-4">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Implementation</h1>
+      <h1 className="text-2xl font-bold mb-6">Implementation</h1>
       
       <div className="flex mb-6">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search issues..."
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md"
+          placeholder="Search issues to download..."
+          className="flex-1 p-2 border rounded-l"
         />
         <button
           onClick={handleSearch}
-          className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 flex items-center"
+          className="bg-blue-500 text-white p-2 rounded-r flex items-center"
         >
-          <Search className="h-5 w-5 mr-1" />
+          <Search size={18} className="mr-1" />
           Search
         </button>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-4">
         {issues.map(issue => (
-          <div key={issue._id} className="flex justify-between items-center p-3 border-b border-gray-200">
-            <div>
-              <h3 className="font-medium">{issue.issueTitle}</h3>
-              <p className="text-sm text-gray-500">{issue.projectName}</p>
+          <div key={issue._id} className="bg-white shadow rounded-lg p-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-bold">{issue.issueTitle}</h3>
+                <p className="text-sm text-gray-600">{issue.application}</p>
+              </div>
+              <button
+                onClick={() => handleDownload(issue)}
+                className="text-green-500 hover:text-green-700 flex items-center"
+              >
+                <Download size={18} className="mr-1" />
+                Download
+              </button>
             </div>
-            <button 
-              onClick={() => downloadIssue(issue)}
-              className="text-blue-500 hover:text-blue-700"
-            >
-              <Download className="h-5 w-5" />
-            </button>
           </div>
         ))}
       </div>

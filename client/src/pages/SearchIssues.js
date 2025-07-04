@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Loader2 } from 'lucide-react';
 import IssueCard from '../components/IssueCard';
-import SolutionModal from '../components/SolutionModal'; // Make sure this import is correct
+import SolutionModal from '../components/EditSolutionModal';
+import ViewIssueModal from '../components/ViewIssueModal';
 
 export default function SearchIssues() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -13,6 +14,7 @@ export default function SearchIssues() {
 
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [showSolutionModal, setShowSolutionModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false); // NEW
 
   const handleUpdate = () => {
     setRefreshKey(prev => prev + 1);
@@ -23,7 +25,7 @@ export default function SearchIssues() {
       const response = await axios.get('/api/issues', {
         params: { search: searchQuery }
       });
-      setIssues(response.data.data);
+      setIssues(response.data.data || []);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load issues');
     }
@@ -37,7 +39,7 @@ export default function SearchIssues() {
       const response = await axios.get('/api/issues', {
         params: { search: searchQuery }
       });
-      setIssues(response.data.data);
+      setIssues(response.data.data || []);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to search issues');
       setIssues([]);
@@ -54,6 +56,7 @@ export default function SearchIssues() {
     <div className="max-w-6xl mx-auto p-4">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Search Issues</h1>
 
+      {/* Search Input */}
       <div className="flex mb-6">
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -82,10 +85,22 @@ export default function SearchIssues() {
         </button>
       </div>
 
+      {/* Error Message */}
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
         </div>
+      )}
+
+      {/* View Issue Modal */}
+      {showViewModal && selectedIssue && (
+        <ViewIssueModal
+          issue={selectedIssue}
+          onClose={() => {
+            setShowViewModal(false);
+            setSelectedIssue(null);
+          }}
+        />
       )}
 
       {/* Solution Modal */}
@@ -94,9 +109,24 @@ export default function SearchIssues() {
           issue={selectedIssue}
           onClose={() => setShowSolutionModal(false)}
           onSubmit={async (solutionData) => {
-            await axios.post(`/api/issues/${selectedIssue._id}/solutions`, solutionData);
-            setShowSolutionModal(false);
-            refreshIssues();
+            try {
+              const formData = new FormData();
+              formData.append('ntId', solutionData.ntId);
+              formData.append('email', solutionData.email);
+              formData.append('category', solutionData.solutionType);
+              formData.append('description', solutionData.solution);
+              solutionData.files.forEach(file => formData.append('files', file));
+
+              await axios.patch(`/api/issues/${selectedIssue._id}/solution`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+              });
+
+              setShowSolutionModal(false);
+              refreshIssues();
+            } catch (err) {
+              console.error('Error submitting solution:', err);
+              alert('Failed to submit solution. Check console for details.');
+            }
           }}
         />
       )}
@@ -112,7 +142,10 @@ export default function SearchIssues() {
             <IssueCard
               key={issue._id}
               issue={issue}
-              onView={() => setSelectedIssue(issue)}
+              onView={() => {
+                setSelectedIssue(issue);
+                setShowViewModal(true);
+              }}
               onEdit={() => {
                 setSelectedIssue(issue);
                 setShowSolutionModal(true);
